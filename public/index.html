@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Учёт · Оплаты учебного центра</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <svg class="icon-defs" aria-hidden="true"><defs>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 5v15M3 4h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5v15h-5a4 4 0 0 0-4 2 4 4 0 0 0-4-2H3z"/></symbol>
+    <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M20 8V5H5a3 3 0 0 0 0 6h16v9H5a3 3 0 0 1-3-3V8m19 5h-5v4h5M17 15h.01"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M2 21v-3a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v3M17 3a4 4 0 0 1 0 8m2 3a5 5 0 0 1 3 4v3"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m6 12 4 4 8-8"/><circle cx="12" cy="12" r="9"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
+  </defs></svg>
+
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="Учёт — главная"><span class="brand-mark"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg></span><span>Учёт<span class="brand-caption">учебный центр</span></span></a>
+    <p class="nav-caption">РАБОЧЕЕ ПРОСТРАНСТВО</p>
+    <div class="tabs" role="tablist" aria-label="Раздел учёта" aria-orientation="vertical">
+      <button id="tab-debtors" class="tab active" type="button" role="tab" aria-selected="true" aria-controls="view-debtors" tabindex="0" data-view="debtors"><svg class="icon" aria-hidden="true"><use href="#i-wallet"/></svg><span>Должники</span><span id="nav-debtors-count" class="nav-count">—</span></button>
+      <button id="tab-students" class="tab" type="button" role="tab" aria-selected="false" aria-controls="view-students" tabindex="-1" data-view="students"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg><span>Ученики</span><span id="students-count" class="nav-count">—</span></button>
+      <button id="tab-history" class="tab" type="button" role="tab" aria-selected="false" aria-controls="view-history" tabindex="-1" data-view="history"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg><span>История оплат</span></button>
+    </div>
+    <button id="header-add-student" class="sidebar-add" type="button"><span aria-hidden="true">＋</span> Добавить ученика</button>
+    <div class="sidebar-bottom"><span class="workspace-avatar" aria-hidden="true">УЦ</span><div><strong>Учебный центр</strong><span>Панель администратора</span></div></div>
+  </aside>
+
+  <main class="page">
+    <header class="page-heading"><div><p class="eyebrow">ФИНАНСЫ УЧЕБНОГО ЦЕНТРА</p><h1 id="page-title">Оплаты и долги</h1><p id="page-description" class="lead">Всё, что нужно для учёта оплаты за обучение.</p></div><button id="header-add-payment" class="button" type="button"><span aria-hidden="true">＋</span> Внести оплату</button></header>
+    <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+    <div id="global-error" class="error-banner" role="alert" hidden><span id="global-error-text"></span><button id="retry-button" class="text-button" type="button">Повторить</button></div>
+
+    <section id="overview" aria-label="Сводка за выбранный месяц">
+      <div class="overview-toolbar"><div><h2>Обзор месяца</h2><p>Кто оплатил обучение и сколько осталось получить.</p></div><div class="month-picker"><label for="month" class="visually-hidden">Месяц расчёта</label><input id="month" name="month" type="month" min="0001-01" max="9999-12" required><button id="current-month-button" class="text-button" type="button" hidden>Текущий месяц</button></div></div>
+      <div class="summary">
+        <article class="metric metric-primary"><div class="metric-top"><span>Осталось получить</span><svg class="icon" aria-hidden="true"><use href="#i-wallet"/></svg></div><div class="metric-value"><strong id="total-debt">—</strong><span>UZS</span></div><p>Общий долг за выбранный месяц</p></article>
+        <article class="metric"><div class="metric-top"><span>Ждём оплату</span><span class="metric-dot amber" aria-hidden="true"></span></div><strong id="debtors-count">—</strong><p>Учеников с задолженностью</p></article>
+        <article class="metric"><div class="metric-top"><span>Без задолженности</span><svg class="icon success-icon" aria-hidden="true"><use href="#i-check"/></svg></div><strong id="clear-count">—</strong><p>За выбранный месяц</p></article>
+      </div>
+      <div class="collection-progress"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg><span id="progress-caption">Загружаем данные…</span><progress id="paid-progress" max="100" value="0" aria-label="Доля учеников без задолженности"></progress></div>
+    </section>
+
+    <section class="panel records-panel" aria-label="Ученики и расчёты">
+      <div id="view-debtors" role="tabpanel" aria-labelledby="tab-debtors">
+        <div class="section-heading"><div><h2>Кому осталось оплатить</h2><p id="debtors-period">Загружаем данные…</p></div><span id="debtors-shown" class="section-tag"></span></div>
+        <div class="filter-bar"><label class="search-field" for="debtor-search"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><span class="visually-hidden">Поиск должника по имени, группе или телефону</span><input id="debtor-search" type="search" placeholder="Найти ученика, группу или телефон" autocomplete="off"></label><label class="status-filter"><span class="visually-hidden">Статус оплаты</span><select id="debtor-filter" aria-label="Статус оплаты"><option value="all">Все должники</option><option value="partial">Оплатили часть</option><option value="unpaid">Ещё не платили</option></select></label></div>
+        <div id="debtors-content" class="table-content" aria-live="polite"><p class="empty-state">Загружаем задолженности…</p></div>
+        <p class="panel-note"><span aria-hidden="true">ⓘ</span> Долг = стоимость месяца − оплаты за этот месяц. Суммы указаны в UZS.</p>
+      </div>
+      <div id="view-students" role="tabpanel" aria-labelledby="tab-students" hidden>
+        <div class="section-heading"><div><h2>Список учеников</h2><p>Контакты, группы и стоимость обучения.</p></div><button id="add-student-button" class="button button-secondary" type="button">＋ Добавить ученика</button></div>
+        <div class="filter-bar"><label class="search-field" for="student-search"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><span class="visually-hidden">Поиск ученика по имени, группе или телефону</span><input id="student-search" type="search" placeholder="Найти ученика, группу или телефон" autocomplete="off"></label></div>
+        <div id="students-content" class="table-content" aria-live="polite"><p class="empty-state">Загружаем учеников…</p></div>
+      </div>
+      <div id="view-history" role="tabpanel" aria-labelledby="tab-history" hidden>
+        <div class="section-heading"><div><h2>Платежи ученика</h2><p>Все сохранённые оплаты, включая другие месяцы.</p></div><span class="section-tag">Все даты</span></div>
+        <div class="history-picker"><label for="history-student">Чью историю показать?</label><select id="history-student"><option value="">Выберите ученика</option></select></div>
+        <div id="history-content" class="table-content" aria-live="polite"><p class="empty-state">Выберите ученика, чтобы посмотреть его оплаты.</p></div>
+      </div>
+    </section>
+    <footer class="footer"><span>Учёт · Мини-система учебного центра</span><span>Локальная версия · Тестовые данные</span></footer>
+  </main>
+
+  <dialog id="payment-dialog" class="payment-dialog" aria-labelledby="payment-title" aria-describedby="payment-intro">
+    <div class="dialog-shell">
+      <div class="dialog-heading"><div><p class="eyebrow">НОВАЯ ЗАПИСЬ</p><h2 id="payment-title">Внести оплату</h2></div><button id="close-payment-dialog" class="icon-button" type="button" aria-label="Закрыть окно оплаты">×</button></div>
+      <p id="payment-intro" class="muted">Укажите деньги, которые уже получили от ученика.</p>
+      <form id="payment-form">
+        <div class="field"><label for="payment-student">Ученик</label><select id="payment-student" name="studentId" required><option value="">Выберите ученика</option></select></div>
+        <div id="payment-context" class="payment-context" aria-live="polite" hidden></div>
+        <div class="field"><label for="payment-amount">Полученная сумма, UZS</label><input id="payment-amount" name="amount" class="amount-input" type="text" inputmode="decimal" pattern="[0-9][0-9\s]*([.,][0-9]{1,2})?" title="Введите положительную сумму, например 250 000 или 250000,50" placeholder="0,00" required autocomplete="off" aria-describedby="payment-amount-help payment-effect"><button id="fill-remaining" class="amount-shortcut" type="button" hidden></button><small id="payment-amount-help">Можно внести всю сумму или её часть.</small><small id="payment-effect" class="payment-effect" role="status" hidden></small></div>
+        <div class="field"><label for="payment-date">Когда получили оплату</label><input id="payment-date" name="date" type="date" min="0001-01-01" max="9999-12-31" required aria-describedby="payment-period-hint"><small id="payment-period-hint" class="period-hint" role="status" hidden></small></div>
+        <p id="payment-error" class="form-error" role="alert" hidden></p>
+        <div class="dialog-actions"><button id="cancel-payment-dialog" class="button button-secondary" type="button">Отмена</button><button id="save-payment-button" class="button" type="submit">Сохранить оплату</button></div>
+      </form>
+      <div id="payment-result" class="payment-result" role="status" aria-live="polite" hidden></div>
+      <button id="payment-done-button" class="button full-width" type="button" hidden>Готово</button>
+      <button id="payment-history-button" class="text-button context-history" type="button" hidden>Посмотреть историю оплат ученика</button>
+      <p id="no-students-hint" class="panel-note" hidden>Сначала добавьте ученика в разделе «Ученики».</p>
+    </div>
+  </dialog>
+
+  <dialog id="student-dialog" aria-labelledby="student-dialog-title">
+    <form id="student-form" class="dialog-shell">
+      <div class="dialog-heading"><div><p class="eyebrow">КАРТОЧКА УЧЕНИКА</p><h2 id="student-dialog-title">Новый ученик</h2></div><button id="close-student-dialog" class="icon-button" type="button" aria-label="Закрыть карточку ученика">×</button></div>
+      <div class="field"><label for="student-name">Имя ученика</label><input id="student-name" name="name" type="text" maxlength="100" required autocomplete="name" placeholder="Например, Алина Каримова"></div>
+      <div class="field"><label for="student-phone">Телефон</label><input id="student-phone" name="phone" type="tel" maxlength="40" required autocomplete="tel" placeholder="Например, +998 90 123 45 67"></div>
+      <div class="field"><label for="student-group">Группа</label><input id="student-group" name="group" type="text" maxlength="100" required placeholder="Например, Английский A2"></div>
+      <div class="field"><label for="student-fee">Стоимость обучения за месяц, UZS</label><input id="student-fee" name="monthlyFee" type="text" inputmode="decimal" pattern="[0-9][0-9\s]*([.,][0-9]{1,2})?" title="Введите сумму, например 500 000 или 500000,50" required placeholder="Например, 500 000"></div>
+      <p id="student-fee-note" class="panel-note">Изменение стоимости применяется и к расчёту прошлых месяцев.</p>
+      <p id="student-error" class="form-error" role="alert" hidden></p>
+      <div class="dialog-actions"><button id="cancel-student-dialog" class="button button-secondary" type="button">Отмена</button><button id="save-student-button" class="button" type="submit">Добавить ученика</button></div>
+    </form>
+  </dialog>
+</body>
+</html>
