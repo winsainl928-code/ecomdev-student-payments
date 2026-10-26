@@ -1,0 +1,14 @@
+{
+  "name": "ecomdev-student-payments",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Мини-учёт оплат учебного центра: API, SQLite и мобильная веб-страница.",
+  "engines": { "node": ">=24.0.0" },
+  "scripts": {
+    "start": "node src/server.js",
+    "preview": "node scripts/preview.js",
+    "test": "node --test",
+    "demo": "node scripts/seed.js"
+  }
+}
